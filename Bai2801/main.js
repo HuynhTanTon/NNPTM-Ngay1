@@ -21,7 +21,11 @@ async function LoadData() {
                 <td>${post.id}</td>
                 <td>${post.title}</td>
                 <td>${post.views}</td>
-               <td><input type="submit" value="Delete" onclick="Delete('${post.id}')"/></td>
+               <td>
+                   <div class="btn-group">
+                       <input type="submit" class="btn-delete" value="🗑️ Delete" onclick="Delete('${post.id}')"/>
+                   </div>
+               </td>
             </tr>`
         }
     } catch (error) {
@@ -148,7 +152,12 @@ async function LoadComments() {
                 <td>${comment.id}</td>
                 <td>${comment.text}</td>
                 <td>${comment.postId}</td>
-               <td><input type="submit" value="Delete" onclick="DeleteComment('${comment.id}')"/></td>
+               <td>
+                   <div class="btn-group">
+                       <input type="submit" class="btn-edit" value="✏️ Edit" onclick="EditComment('${comment.id}', '${comment.text.replace(/'/g, "\\'")}', '${comment.postId}')"/>
+                       <input type="submit" class="btn-delete" value="🗑️ Delete" onclick="DeleteComment('${comment.id}')"/>
+                   </div>
+               </td>
             </tr>`
         }
     } catch (error) {
@@ -228,6 +237,13 @@ async function SaveComment() {
     }
     LoadComments();
     return false;
+}
+
+async function EditComment(id, text, postId) {
+    // Điền dữ liệu vào form để cập nhật
+    document.getElementById("comment_id_txt").value = id;
+    document.getElementById("comment_text_txt").value = text;
+    document.getElementById("comment_postId_txt").value = postId;
 }
 
 async function DeleteComment(id) {
