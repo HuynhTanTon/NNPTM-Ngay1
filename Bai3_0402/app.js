@@ -5,8 +5,12 @@
 
 const API_PRODUCTS = 'https://api.escuelajs.co/api/v1/products';
 
-/** Danh sách sản phẩm gốc từ API (dùng cho tìm kiếm, sau này phân trang/sắp xếp) */
+/** Danh sách sản phẩm gốc từ API (dùng cho tìm kiếm, phân trang, sắp xếp) */
 let allProducts = [];
+
+/** Phân trang: trang hiện tại (1-based), số item mỗi trang */
+let currentPage = 1;
+let pageSize = 10;
 
 /**
  * Lấy danh sách sản phẩm từ API
@@ -132,25 +136,88 @@ function filterProductsByTitle(products, keyword) {
 }
 
 /**
- * Áp dụng tìm kiếm và cập nhật bảng (gọi khi user nhập liệu)
+ * Lấy danh sách đang áp dụng filter (tìm kiếm; sau này thêm sắp xếp)
  */
-function applySearch() {
-    const keyword = document.getElementById('searchTitle').value;
-    const filtered = filterProductsByTitle(allProducts, keyword);
-    renderProductTable(filtered);
+function getFilteredProducts() {
+    var keyword = document.getElementById('searchTitle');
+    var k = keyword ? keyword.value : '';
+    return filterProductsByTitle(allProducts, k);
 }
 
 /**
- * Khởi tạo: load dữ liệu, hiển thị, gắn sự kiện tìm kiếm
+ * Áp dụng phân trang + filter và cập nhật bảng
+ */
+function applyPagination() {
+    var filtered = getFilteredProducts();
+    var total = filtered.length;
+    var totalPages = Math.max(1, Math.ceil(total / pageSize));
+    currentPage = Math.max(1, Math.min(currentPage, totalPages));
+
+    var start = (currentPage - 1) * pageSize;
+    var pageProducts = filtered.slice(start, start + pageSize);
+
+    renderProductTable(pageProducts);
+
+    var pageInfo = document.getElementById('pageInfo');
+    if (pageInfo) pageInfo.textContent = 'Trang ' + currentPage + ' / ' + totalPages;
+
+    var btnPrev = document.getElementById('btnPrev');
+    var btnNext = document.getElementById('btnNext');
+    if (btnPrev) {
+        btnPrev.disabled = currentPage <= 1;
+        btnPrev.closest('.page-item').classList.toggle('disabled', currentPage <= 1);
+    }
+    if (btnNext) {
+        btnNext.disabled = currentPage >= totalPages;
+        btnNext.closest('.page-item').classList.toggle('disabled', currentPage >= totalPages);
+    }
+}
+
+/**
+ * Áp dụng tìm kiếm (reset về trang 1) và cập nhật bảng
+ */
+function applySearch() {
+    currentPage = 1;
+    applyPagination();
+}
+
+/**
+ * Khởi tạo: load dữ liệu, hiển thị, gắn sự kiện tìm kiếm và phân trang
  */
 async function init() {
     allProducts = await fetchProducts();
-    renderProductTable(allProducts);
 
     var searchInput = document.getElementById('searchTitle');
-    if (searchInput) {
-        searchInput.addEventListener('input', applySearch);
+    if (searchInput) searchInput.addEventListener('input', applySearch);
+
+    var pageSizeSelect = document.getElementById('pageSize');
+    if (pageSizeSelect) {
+        pageSize = parseInt(pageSizeSelect.value, 10) || 10;
+        pageSizeSelect.addEventListener('change', function () {
+            pageSize = parseInt(this.value, 10) || 10;
+            currentPage = 1;
+            applyPagination();
+        });
     }
+
+    var btnPrev = document.getElementById('btnPrev');
+    var btnNext = document.getElementById('btnNext');
+    if (btnPrev) btnPrev.addEventListener('click', function () {
+        if (currentPage > 1) {
+            currentPage--;
+            applyPagination();
+        }
+    });
+    if (btnNext) btnNext.addEventListener('click', function () {
+        var filtered = getFilteredProducts();
+        var totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+        if (currentPage < totalPages) {
+            currentPage++;
+            applyPagination();
+        }
+    });
+
+    applyPagination();
 }
 
 init();
