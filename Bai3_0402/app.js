@@ -12,6 +12,10 @@ let allProducts = [];
 let currentPage = 1;
 let pageSize = 10;
 
+/** Sắp xếp: cột đang chọn ('title' | 'price'), hướng 'asc' | 'desc' */
+let sortBy = '';
+let sortDir = 'asc';
+
 /**
  * Lấy danh sách sản phẩm từ API
  */
@@ -136,7 +140,7 @@ function filterProductsByTitle(products, keyword) {
 }
 
 /**
- * Lấy danh sách đang áp dụng filter (tìm kiếm; sau này thêm sắp xếp)
+ * Lấy danh sách đang áp dụng filter (tìm kiếm)
  */
 function getFilteredProducts() {
     var keyword = document.getElementById('searchTitle');
@@ -145,18 +149,62 @@ function getFilteredProducts() {
 }
 
 /**
- * Áp dụng phân trang + filter và cập nhật bảng
+ * Sắp xếp mảng sản phẩm theo sortBy và sortDir (không thay đổi mảng gốc)
+ */
+function sortProducts(products, by, dir) {
+    if (!by || !products || products.length === 0) return products.slice();
+    var arr = products.slice();
+    var isAsc = dir === 'asc';
+    if (by === 'title') {
+        arr.sort(function (a, b) {
+            var x = (a.title != null) ? String(a.title) : '';
+            var y = (b.title != null) ? String(b.title) : '';
+            return isAsc ? x.localeCompare(y) : y.localeCompare(x);
+        });
+    } else if (by === 'price') {
+        arr.sort(function (a, b) {
+            var x = Number(a.price);
+            var y = Number(b.price);
+            if (isNaN(x)) x = 0;
+            if (isNaN(y)) y = 0;
+            return isAsc ? x - y : y - x;
+        });
+    }
+    return arr;
+}
+
+/**
+ * Lấy danh sách đã filter + sắp xếp (dùng cho phân trang và export)
+ */
+function getDisplayProducts() {
+    var filtered = getFilteredProducts();
+    return sortProducts(filtered, sortBy, sortDir);
+}
+
+/**
+ * Cập nhật icon sắp xếp trên header
+ */
+function updateSortIcons() {
+    var titleIcon = document.getElementById('sortTitleIcon');
+    var priceIcon = document.getElementById('sortPriceIcon');
+    if (titleIcon) titleIcon.textContent = sortBy === 'title' ? (sortDir === 'asc' ? ' ▲' : ' ▼') : '';
+    if (priceIcon) priceIcon.textContent = sortBy === 'price' ? (sortDir === 'asc' ? ' ▲' : ' ▼') : '';
+}
+
+/**
+ * Áp dụng phân trang + filter + sắp xếp và cập nhật bảng
  */
 function applyPagination() {
-    var filtered = getFilteredProducts();
-    var total = filtered.length;
+    var display = getDisplayProducts();
+    var total = display.length;
     var totalPages = Math.max(1, Math.ceil(total / pageSize));
     currentPage = Math.max(1, Math.min(currentPage, totalPages));
 
     var start = (currentPage - 1) * pageSize;
-    var pageProducts = filtered.slice(start, start + pageSize);
+    var pageProducts = display.slice(start, start + pageSize);
 
     renderProductTable(pageProducts);
+    updateSortIcons();
 
     var pageInfo = document.getElementById('pageInfo');
     if (pageInfo) pageInfo.textContent = 'Trang ' + currentPage + ' / ' + totalPages;
@@ -209,12 +257,27 @@ async function init() {
         }
     });
     if (btnNext) btnNext.addEventListener('click', function () {
-        var filtered = getFilteredProducts();
-        var totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+        var display = getDisplayProducts();
+        var totalPages = Math.max(1, Math.ceil(display.length / pageSize));
         if (currentPage < totalPages) {
             currentPage++;
             applyPagination();
         }
+    });
+
+    var sortTitle = document.getElementById('sortTitle');
+    var sortPrice = document.getElementById('sortPrice');
+    if (sortTitle) sortTitle.addEventListener('click', function () {
+        if (sortBy === 'title') sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+        else { sortBy = 'title'; sortDir = 'asc'; }
+        currentPage = 1;
+        applyPagination();
+    });
+    if (sortPrice) sortPrice.addEventListener('click', function () {
+        if (sortBy === 'price') sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+        else { sortBy = 'price'; sortDir = 'asc'; }
+        currentPage = 1;
+        applyPagination();
     });
 
     applyPagination();

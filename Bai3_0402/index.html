@@ -6,6 +6,11 @@
     <title>Dashboard Quản lý Sản phẩm</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .sort-icon { margin-left: 0.25rem; font-size: 0.75em; }
+        [data-sort] { cursor: pointer; }
+        [data-sort]:hover { text-decoration: underline; }
+    </style>
 </head>
 <body class="bg-light">
     <div class="container-fluid py-4">
@@ -25,8 +30,8 @@
                         <thead class="table-dark">
                             <tr>
                                 <th>ID</th>
-                                <th>Title</th>
-                                <th>Price</th>
+                                <th><span role="button" class="user-select-none" id="sortTitle" data-sort="title" title="Sắp xếp theo title">Title</span> <span id="sortTitleIcon" class="sort-icon"></span></th>
+                                <th><span role="button" class="user-select-none" id="sortPrice" data-sort="price" title="Sắp xếp theo giá">Price</span> <span id="sortPriceIcon" class="sort-icon"></span></th>
                                 <th>Category</th>
                                 <th>Images</th>
                             </tr>
